@@ -38,12 +38,18 @@ matrix = m5x5
 N_COL = len(matrix[0])
 N_ROW = len(matrix)
 
+matrix[0][0] = 0
+
 def heuristic(point, target=(N_ROW-1, N_COL-1)):
+    # just use the distance of the point to target as heuristic estimation
+    # also works if return 0
     y, x = point
     ty, tx = target
     return (ty + tx - y - x) * 1
 
 def get_neighbours(point):
+    global matrix, N_COL, N_ROW
+    # get neighbours (of point) and their values
     neigher_offsets = [(-1, 0), (1, 0), (0, 1), (0, -1)] 
     y, x = point
     neighbour = [(y+dy, x+dx) for dy, dx in neigher_offsets]
@@ -54,22 +60,26 @@ def get_neighbours(point):
     return {p:get_value(p) for p in neighbour if is_valid(p)}
 
 def a_star(get_neighbours, p_start=(0, 0), p_target=(N_ROW-1, N_COL-1), h=heuristic):
-    # from `Python Algorithms` p204. By Magnus Lie Hetland
+    global matrix
+    # snippet from `Python Algorithms` p204. By Magnus Lie Hetland
     visited, Q = {}, [(h(p_start), None, p_start)]
     while Q:
         d, p_prev, p_curr = heappop(Q)
-        # heappop will automatically yield u
-        # p_curr is current point with SMALLEST estimated loss
+        # NOTE: heappop will automatically yield current point with SMALLEST estimated loss
+        # always start from this smallest point
         if p_curr in visited:
             continue
         visited[p_curr] = p_prev
         if p_curr == p_target:
             return d - h(p_target), visited
         for p_neighbor, neighbour_loss in get_neighbours(p_curr).items():
+            # estimate delta weight to add. 
+            # neighbour_loss is given by task. then add neighbour's distance.
             delta_w = neighbour_loss - h(p_curr) + h(p_neighbor)
             heappush(Q, (d + delta_w, p_curr, p_neighbor))
     return inf, None
 
 loss, visited = a_star(get_neighbours)
+# visited is a dictionary, we can use it to find the whole path.
 print(loss)
 
