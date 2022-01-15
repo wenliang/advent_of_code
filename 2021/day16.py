@@ -6,6 +6,7 @@ with open("day16_input.txt", "r") as f:
     s_hex = f.readlines()[0].strip()
 
 def hex2bin(s_hex):
+    # NOTE: must use zfill(4) here as question described.
     ss = [bin(int(a, 16))[2:].zfill(4) for a in s_hex]
     return "".join(ss)
 
@@ -21,8 +22,10 @@ def parse_literal_num(l_bin):
             break
     return int(nums, 2), l_bin
 
+# to save all version number for Q1
 all_version = []
 
+# a dict to save functions for Q2
 id2fun = {
         0: sum,
         1: math.prod,
@@ -33,17 +36,20 @@ id2fun = {
         7: lambda l: 1 if l[0]==l[1] else 0,
         }
 
-def parse_package(l_bin, n_package=1):
+def parse_package(l_bin):
 
     print("package is: {}".format("".join(l_bin)))
     version = int(l_bin[:3], 2)
     type_id = int(l_bin[3:6], 2)
 
     if type_id == 4:
+        # situation 1
         nums, l_bin = parse_literal_num(l_bin[6:])
+        # nums, l_bin is ready for recursion
     else:
         bit_label = int(l_bin[6])
         if bit_label == 0:
+            # situation 2
             # define the length of total packages
             n_sub_p = int(l_bin[7:7+15], 2)
             select = l_bin[7+15:7+15+n_sub_p]
@@ -59,8 +65,9 @@ def parse_package(l_bin, n_package=1):
                     break
             nums = id2fun[type_id](num_list)
             print("list: {} -> {}".format(num_list, nums))
+            # nums, l_bin is ready for recursion
         else:
-            # define the number of packages
+            # situation 3
             n_sub_p = int(l_bin[7:7+11], 2)
             print("select 1: n_packages: {}={}".format("".join(l_bin[7:7+11]), n_sub_p))
             l_bin = l_bin[7+11:]
@@ -71,10 +78,10 @@ def parse_package(l_bin, n_package=1):
                 print("    select 1: package {}: leftover {}".format(i_package, l_bin))
                 num_list.append(n1)
             nums = id2fun[type_id](num_list)
+            # nums, l_bin is ready for recursion
 
     all_version.append(version)
     return version, type_id, nums, l_bin
-
 
 # s_hex = "D2FE28"
 # s_hex = "38006F45291200"
