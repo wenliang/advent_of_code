@@ -1,4 +1,5 @@
 from collections import Counter
+from functools import lru_cache
 
 def get_deterministic_dice():
     i = 0
@@ -12,8 +13,7 @@ def get_deterministic_dice():
         yield sum(s), counts
 
 def get_current_position(p1, dice):
-    p1 += dice
-    return (p1-1) % 10 + 1
+    return (p1+dice-1) % 10 + 1
 
 def q1():
     # NOTE: this is my input
@@ -37,8 +37,6 @@ def q1():
 
         gamer = (gamer+1) % 2
 
-q1()
-
 def quantum_3rolls_freq():
     a = []
     for i1 in range(1, 4):
@@ -46,42 +44,51 @@ def quantum_3rolls_freq():
             for i3 in range(1, 4):
                 a.append(i1+i2+i3)
     return Counter(a)
+# the odds of 3 rolls
+rolls = quantum_3rolls_freq()
+print(rolls)
+
+@lru_cache(40000)
+def p1_move(p1, s1, p2, s2):
+    total = [0, 0]
+    for step, r2 in rolls.items():
+        p, s = p1, s1
+        p = (p + step - 1) % 10 + 1
+        s += p
+
+        if s >= 21:
+            total[0] += r2
+        else:
+            t1 = p2_move(p, s, p2, s2)
+            total = [a+b*r2 for a, b in zip(total, t1)]
+    return total
+
+@lru_cache(40000)
+def p2_move(p1, s1, p2, s2):
+    total = [0, 0]
+    for step, r2 in rolls.items():
+        p, s = p2, s2
+        p = (p + step - 1) % 10 + 1
+        s += p
+
+        if s >= 21:
+            total[1] += r2
+        else:
+            t1 = p1_move(p1, s1, p, s)
+            total = [a+b*r2 for a, b in zip(total, t1)]
+    return total
 
 def q2():
-    wins = [0, 0]
 
-    # the odds of 3 rolls
-    rolls = quantum_3rolls_freq()
 
-    def move_x1(gamer, positions, scores, repeat=1):
-        for step, r2 in rolls.items():
-            position = (positions[gamer]+step-1)%10 + 1
-            score = scores[gamer] + position
-            if score >= 21:
-                wins[gamer] += repeat*r2
-                print("winner {}, position {}, scores {}, repeat: {}".format(gamer+1, position, score, repeat*r2))
-                # this world will stop
-            else:
-                if gamer == 0:
-                    gamer_2 = 1
-                    positions = (position, positions[1])
-                    scores = (score, scores[1])
-                else:
-                    gamer_2 = 0
-                    positions = (positions[0], position)
-                    scores = (scores[0], score)
-                # print("continue {}, positions {}, scores {}".format(gamer_2, positions, scores))
-                move_x1(gamer_2, positions, scores, repeat*r2)
-    gamer = 0
+    # test input
+    # positions = (4, 8)
     # my input
     positions = (8, 2)
-    # test input
-    positions = (4, 8)
-    scores = (0, 0)
-    move_x1(gamer, positions, scores, repeat=1)
+    wins = p1_move(positions[0], 0, positions[1], 0)
     
-    print(wins)
+    print("Q2: {}".format(wins))
 
+
+q1()
 q2()
-
-    
